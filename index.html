@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Data Display</title>
+  <style>
+    /* Add some basic styling */
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+    th, td {
+      border: 1px solid black;
+      padding: 8px;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <h1>Data Display</h1>
+
+  <table id="data-table">
+    <thead>
+      <tr>
+        <th>Number</th>
+        <th>Name</th>
+        <th>Year of Birth</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Data will be inserted dynamically here -->
+    </tbody>
+  </table>
+
+  <button onclick="addData()">Add New Data</button>
+
+  <script>
+    // Fetch data from the server and populate the table
+    function fetchData() {
+      fetch('/data')
+        .then(response => response.json())
+        .then(data => {
+          const tableBody = document.querySelector('#data-table tbody');
+          tableBody.innerHTML = '';
+
+          // Iterate over the data and create table rows
+          data.forEach(row => {
+            const newRow = document.createElement('tr');
+            newRow.innerHTML = `
+              <td>${row.author_id}</td>
+              <td>${row.name}</td>
+              <td>${row.year_born}</td>
+              <td>
+                <button onclick="editData(${row.author_id})">Edit</button>
+                <button onclick="deleteData(${row.author_id})">Delete</button>
+              </td>
+            `;
+            tableBody.appendChild(newRow);
+          });
+        })
+        .catch(error => {
+          console.error('Error fetching data', error);
+        });
+    }
+
+    // Add new data
+    function addData() {
+      const name = prompt('Enter Name:');
+      const year_born = prompt('Enter Year of Birth:');
+
+      fetch('/data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ name, year_born })
+      })
+        .then(response => {
+          if (response.ok) {
+            // Data added successfully
+            fetchData();
+          } else {
+            throw new Error('Error adding data');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+        });
+    }
+
+    // Edit data
+    function editData(author_id) {
+      const name = prompt('Enter Name value:');
+      const year_born = prompt('Enter Year of Birth value:');
+
+      if (name && year_born ) {
+        const data = { name, year_born };
+
+        fetch(`/data/${author_id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(data)
+        })
+          .then(response => {
+            if (response.ok) {
+              console.log(`Data with ID ${author_id} updated successfully`);
+              fetchData(); // Refresh the table after updating data
+            } else {
+              console.error('Error updating data');
+            }
+          })
+          .catch(error => {
+            console.error('Error updating data', error);
+          });
+      }
+    }
+
+    // Delete data
+    function deleteData(author_id) {
+      if (confirm('Are you sure you want to delete this data?')) {
+        fetch(`/data/${author_id}`, {
+          method: 'DELETE'
+        })
+          .then(response => {
+            if (response.ok) {
+              console.log(`Data with ID ${author_id} deleted successfully`);
+              fetchData(); // Refresh the table after deleting data
+            } else {
+              console.error('Error deleting data');
+            }
+          })
+          .catch(error => {
+            console.error('Error deleting data', error);
+          });
+      }
+    }
+
+    // Fetch initial data on page load
+    fetchData();
+  </script>
+</body>
+</html>
